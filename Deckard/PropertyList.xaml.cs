@@ -1,16 +1,21 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using Cain;
+using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace Deckard
 {
     public partial class PropertyList : Window
     {
-        private List<Entry> entries;
+        private ENTable _enTable;
         private MainWindow mainWindow;
+        private List<string> _currentFilteredProperties;
 
-        public PropertyList()
+        public PropertyList(ENTable enTable, List<string> currentFilteredProperties)
         {
+            _enTable = enTable;
+            _currentFilteredProperties = currentFilteredProperties;
+
             InitializeComponent();
         }
 
@@ -20,22 +25,19 @@ namespace Deckard
             mainWindow = ((MainWindow)Application.Current.MainWindow);
             mainWindow.IsEnabled = false;
 
-            entries = mainWindow.GetEntries();
+            List<ListViewItem> items = new List<ListViewItem>();
+            foreach (var property in _enTable.GetDistinctPropertyNumber())
+            {
+                if (_currentFilteredProperties.Contains(property))
+                    items.Add(new ListViewItem() { Content = property, IsSelected = true });
+                else
+                    items.Add(new ListViewItem() { Content = property });
+            }
 
-            List<string> propertiesTest = new List<string>();
-            foreach (var b in entries)
-                foreach (var c in b.PropertyList)
-                    if (!propertiesTest.Contains(c))
-                        propertiesTest.Add(c);
+            listViewProperties.ItemsSource = items;
 
-            listViewProperties.ItemsSource = propertiesTest;
-        }
-
-        private List<Entry> FilterEntries(List<string> propertyListToFilterBy)
-        {
-            //Return Entries that have content
-            return entries.Where(a => a.PropertyList.Intersect(propertyListToFilterBy).Any()).ToList();
-        }
+            listViewProperties.Focus();
+        }   
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
@@ -44,10 +46,14 @@ namespace Deckard
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            List<string> properties = new List<string>();
-            foreach (var item in listViewProperties.SelectedItems)
-                properties.Add((string)item);
-            mainWindow.entriesDataGrid.ItemsSource = FilterEntries(properties);
+            string selectedItem = "";
+            if (listViewProperties.SelectedItems.Count > 0)
+            {
+                ListViewItem firstItem = listViewProperties.SelectedItems[0] as ListViewItem;
+                selectedItem = firstItem.Content.ToString();
+            }
+            
+            mainWindow.entriesDataGrid.ItemsSource = _enTable.FilterByProperty(selectedItem);
             CloseWindow();
         }
 

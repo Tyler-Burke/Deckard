@@ -17,10 +17,12 @@ namespace Deckard
     public partial class MainWindow : Window
     {
         private readonly FieldInfo _menuDropAlignmentField;
-        private int treeViewIndexCount = 0;
         private Dictionary<int, TabItem> treeViewOpenedNodes;
         private List<string> acceptedFileExtensions;
         private MetricFile metricFile;
+        private const string DATE_FORMAT = "ddMMMyyyy HH:mm";
+        private ENTable currentENTable;
+        private List<string> currentFilteredProperties;
 
         public MainWindow()
         {
@@ -29,7 +31,6 @@ namespace Deckard
             _menuDropAlignmentField = typeof(SystemParameters).GetField("_menuDropAlignment", BindingFlags.NonPublic | BindingFlags.Static);
             System.Diagnostics.Debug.Assert(_menuDropAlignmentField != null);
         }
-
         public MainWindow(string path)
         {
             Initialize();
@@ -40,6 +41,9 @@ namespace Deckard
             OpenCaseFolder(path);
         }
 
+        /// <summary>
+        /// Initialize the MainWindow and global properties
+        /// </summary>
         private void Initialize()
         {
             InitializeComponent();
@@ -59,6 +63,20 @@ namespace Deckard
             string applicationFolderPath = AppDomain.CurrentDomain.BaseDirectory;
             metricFile = new MetricFile(applicationFolderPath + @"Metrics.json");
         }
+        /// <summary>
+        /// Removes the preset pop-up alignment from left aligned and changes to default right aligned
+        /// </summary>
+        private void EnsureStandardPopupAlignment()
+        {
+            if (SystemParameters.MenuDropAlignment && _menuDropAlignmentField != null)
+            {
+                _menuDropAlignmentField.SetValue(null, false);
+            }
+        }
+        /// <summary>
+        /// Open and display the selected folder and contents
+        /// </summary>
+        /// <param name="path"></param>
         private void OpenCaseFolder(string path)
         {
             DirectoryInfo caseFolder = new DirectoryInfo(path);
@@ -75,68 +93,67 @@ namespace Deckard
             tabControlMainContent.Visibility = Visibility.Visible;
             lblIncidentNumber.Text = caseName;
             string docxPath = caseFolder.GetFiles().Where(a => a.Extension == ".docx").First().FullName;
-            var enTable = CainLibrary.ConvertDocxToENTable(docxPath);
+            currentENTable = CainLibrary.ConvertDocxToENTable(docxPath);
+            currentFilteredProperties = currentENTable.GetDistinctPropertyNumber();
 
-            entriesDataGrid.ItemsSource = enTable.Rows;
-            //txtFirstEntryTime.Text = GetFirstEntryTime("");
-            //txtLastEntryTime.Text = GetLastEntryTime("");
+            entriesDataGrid.ItemsSource = currentENTable.Rows;
+            txtFirstEntryTime.Text = currentENTable.GetStartTime().ToString(DATE_FORMAT).ToUpper();
+            txtLastEntryTime.Text = currentENTable.GetEndTime().ToString(DATE_FORMAT).ToUpper();
         }
-        private void EnsureStandardPopupAlignment()
-        {
-            if (SystemParameters.MenuDropAlignment && _menuDropAlignmentField != null)
-            {
-                _menuDropAlignmentField.SetValue(null, false);
-            }
-        }
-        private void ListDirectory(TreeView treeView, string path)
+        /// <summary>
+        /// Populate an IndexedTreeView with the contents of a system directory
+        /// </summary>
+        /// <param name="treeView">The IndexedTreeView object to be populated</param>
+        /// <param name="path">The path to the system directory to populate the tree with</param>
+        private void ListDirectory(IndexedTreeView treeView, string path)
         {
             treeView.Items.Clear();
-            var rootDirectoryInfo = new DirectoryInfo(path);
-            treeView.Items.Add(CreateDirectoryNode(rootDirectoryInfo));
+            DirectoryInfo rootDirectoryInfo = new DirectoryInfo(path);
+            IndexedTreeViewItem rootDirectoryNode = CreateDirectoryNode(rootDirectoryInfo);
+            rootDirectoryNode.IsExpanded = true;
+            treeView.Items.Add(rootDirectoryNode);
         }
-        private IndexedTreeViewItem CreateDirectoryNode(DirectoryInfo directoryInfo)
+        /// <summary>
+        /// Recursively goes into system directory tree and populates an IndexedTreeViewItem object with the directory's contents
+        /// </summary>
+        /// <param name="directory">Directory that will be used to populate IndexedTreeViewItem</param>
+        /// <returns></returns>
+        private IndexedTreeViewItem CreateDirectoryNode(DirectoryInfo directory)
         {
-            if (treeViewIndexCount == 0)
+            IndexedTreeViewItem directoryNode = new IndexedTreeViewItem { Header = directory.Name, Path = directory.FullName };
+            directoryNode.Style = treeViewCaseFolder.Resources["Folder"] as Style;
+            directoryNode.MouseDoubleClick += TreeViewItem_MouseDoubleClick;
+
+            //Register with tree (adds index)
+            treeViewCaseFolder.RegisterChildNode(directoryNode);
+
+            foreach (var subDirectory in directory.GetDirectories())
             {
-                var directoryNode = new IndexedTreeViewItem { Index = treeViewIndexCount, Header = directoryInfo.Name, Path = directoryInfo.FullName, IsExpanded = true };
-                directoryNode.Style = treeViewCaseFolder.Resources["Folder"] as Style;
-                treeViewIndexCount++;
-                foreach (var directory in directoryInfo.GetDirectories())
-                    directoryNode.Items.Add(CreateDirectoryNode(directory));
-
-                directoryNode.MouseDoubleClick += TreeViewItem_MouseDoubleClick;
-
-                return directoryNode;
+                IndexedTreeViewItem newNode = CreateDirectoryNode(subDirectory);
+                treeViewCaseFolder.AddToCollection(newNode);
+                directoryNode.Items.Add(newNode);
             }
-            else
+
+            foreach (var file in directory.GetFiles())
             {
-                var directoryNode = new IndexedTreeViewItem { Index = treeViewIndexCount, Header = directoryInfo.Name, Path = directoryInfo.FullName };
-                directoryNode.Style = treeViewCaseFolder.Resources["Folder"] as Style;
-                directoryNode.MouseDoubleClick += TreeViewItem_MouseDoubleClick;
-
-                treeViewIndexCount++;
-
-                foreach (var directory in directoryInfo.GetDirectories())
+                if (acceptedFileExtensions.Contains(file.Extension))
                 {
-                    directoryNode.Items.Add(CreateDirectoryNode(directory));
+                    IndexedTreeViewItem fileNode = new IndexedTreeViewItem { Header = file.Name, Path = file.FullName };
+                    fileNode.Style = treeViewCaseFolder.Resources["File"] as Style;
+                    fileNode.MouseDoubleClick += TreeViewItem_MouseDoubleClick;
+                    treeViewCaseFolder.RegisterChildNode(fileNode);
+                    treeViewCaseFolder.AddToCollection(fileNode);
+                    directoryNode.Items.Add(fileNode);
                 }
-
-                foreach (var file in directoryInfo.GetFiles())
-                {
-                    if (acceptedFileExtensions.Contains(file.Extension))
-                    {
-                        var fileNode = new IndexedTreeViewItem { Index = treeViewIndexCount, Header = file.Name, Path = file.FullName };
-                        fileNode.Style = treeViewCaseFolder.Resources["File"] as Style;
-                        fileNode.MouseDoubleClick += TreeViewItem_MouseDoubleClick;
-
-                        directoryNode.Items.Add(fileNode);
-                        treeViewIndexCount++;
-                    }
-                }
-
-                return directoryNode;
             }
+
+            return directoryNode;
         }
+        /// <summary>
+        /// Populates a TabItem with an embedded web browser to view the specified file
+        /// </summary>
+        /// <param name="tabItem">The TabItem object to be populated</param>
+        /// <param name="filePath">The path to the file to be opened</param>
         private void FillTabContent(TabItem tabItem, string filePath)
         {
             WebBrowser webBrowser = new WebBrowser();
@@ -197,7 +214,7 @@ namespace Deckard
         }
         private void FilterProperties_Click(object sender, RoutedEventArgs e)
         {
-            PropertyList pl = new PropertyList();
+            PropertyList pl = new PropertyList(currentENTable, currentFilteredProperties);
             pl.Show();
         }
         private void AddMetricButton_Click(object sender, RoutedEventArgs e)
@@ -207,188 +224,6 @@ namespace Deckard
         private void RemoveMetricButton_Click(object sender, RoutedEventArgs e)
         {
 
-        }
-
-        #region Testing
-
-        public List<Entry> GetEntries()
-        {
-            string longCaseNote = "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" + Environment.NewLine +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" + Environment.NewLine + Environment.NewLine +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj" +
-                "Testing lore ssfdsdf sdf sdf sdfm sdmf slk ndfklhjs dklfjslkd jflksdjf lksjdlkf jslkdfj";
-
-            return new List<Entry>()
-            {
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), longCaseNote),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19004305 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002313 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19004305 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19004305 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-                new Entry("002", new DateTime(2019, 3, 19, 11, 36, 00), "P19002323 Heres the evidence"),
-                new Entry("003", new DateTime(2019, 3, 19, 11, 41, 00), "P19002323 Completed photgraphing the evidence"),
-                new Entry("001", new DateTime(2019, 3, 19, 11, 32, 00), "P19002323 Started photographing the evidence"),
-            };
-        }
-        public string GetFirstEntryTime(List<Entry> entries)
-        {
-            if (entries.Count() > 0)
-            {
-                var firstRow = entries.First();
-                if (firstRow.EntryDate.HasValue)
-                {
-                    return firstRow.EntryDate.Value.ToString("ddMMMyyyy HH:mm").ToUpper();
-                }
-            }
-
-            return "";
-        }
-        public string GetLastEntryTime(List<Entry> entries)
-        {
-            if (entries.Count() > 0)
-            {
-                var lastRow = entries.Last();
-                if (lastRow.EntryDate.HasValue)
-                {
-                    return lastRow.EntryDate.Value.ToString("ddMMMyyyy HH:mm").ToUpper();
-                }
-            }
-
-            return "";
-        }
-
-        #endregion
-    }
-
-    public class Entry
-    {
-        public string EntryNumber { get; set; }
-        public DateTime? EntryDate { get; set; }
-        public string EntryContent { get; set; }
-        public List<string> PropertyList { get; set; }
-
-        public Entry(string entryNumber, DateTime? entryDate, string entryContent)
-        {
-            EntryNumber = entryNumber;
-            EntryDate = entryDate;
-            EntryContent = entryContent;
-            var s = entryContent.Split(' ').Select(a => Regex.Match(a, @"P\d{8}").Value).Distinct().ToList();
-            s.Remove("");
-            s.Remove(" ");
-            PropertyList = s;
         }
     }
 }

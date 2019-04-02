@@ -2,7 +2,6 @@ D:\Deckard\Deckard\bin\Debug\Deckard.exe.config
 D:\Deckard\Deckard\bin\Debug\Deckard.exe
 D:\Deckard\Deckard\bin\Debug\Deckard.pdb
 D:\Deckard\Deckard\bin\Debug\Cain.dll
-D:\Deckard\Deckard\obj\Debug\Deckard.csprojAssemblyReference.cache
 D:\Deckard\Deckard\obj\Debug\MainWindow.g.cs
 D:\Deckard\Deckard\obj\Debug\App.g.cs
 D:\Deckard\Deckard\obj\Debug\Deckard_MarkupCompile.cache
@@ -84,3 +83,9 @@ E:\Deckard\Deckard\bin\Debug\DocumentFormat.OpenXml.xml
 E:\Deckard\Deckard\obj\Debug\CreateEditMetricWindow.baml
 E:\Deckard\Deckard\obj\Debug\CreateEditMetricWindow.g.cs
 E:\Deckard\Deckard\bin\Debug\Newtonsoft.Json.dll
+D:\Deckard\Deckard\obj\Debug\CreateEditMetricWindow.baml
+D:\Deckard\Deckard\obj\Debug\CreateEditMetricWindow.g.cs
+D:\Deckard\Deckard\bin\Debug\Newtonsoft.Json.dll
+D:\Deckard\Deckard\bin\Debug\DocumentFormat.OpenXml.dll
+D:\Deckard\Deckard\bin\Debug\DocumentFormat.OpenXml.xml
+D:\Deckard\Deckard\obj\Debug\Deckard.csprojAssemblyReference.cache

@@ -4,10 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Property List" Height="250" Width="250"
-        ResizeMode="NoResize"
+        Title="Property List" Height="250" Width="250" ResizeMode="NoResize"
         x:Name="WindowPropertyList" Initialized="WindowPropertyList_Initialized" Closed="WindowPropertyList_Closed">
-    <Grid>
+    <Window.Resources>
+        <SolidColorBrush x:Key="DarkTheme">#FF6C6C6C</SolidColorBrush>
+        <SolidColorBrush x:Key="DarkTheme_Foreground">White</SolidColorBrush>
+    </Window.Resources>
+    <Grid Background="{StaticResource DarkTheme}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="10" />
             <ColumnDefinition Width="*" />
@@ -21,7 +24,7 @@
             <RowDefinition Height="40" />
         </Grid.RowDefinitions>
 
-        <ListView x:Name="listViewProperties" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="1">
+        <ListView x:Name="listViewProperties" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="1" Background="Gray" Foreground="{StaticResource DarkTheme_Foreground}">
 
         </ListView>
 

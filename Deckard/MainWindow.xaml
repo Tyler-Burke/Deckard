@@ -6,11 +6,14 @@
         xmlns:local="clr-namespace:Deckard"
         mc:Ignorable="d"
         Title="Deckard" Height="800" Width="1000" MinWidth="1000" FontFamily="Segoe UI">
+    <Window.Resources>
+        <SolidColorBrush x:Key="DarkTheme">#FF6C6C6C</SolidColorBrush>
+    </Window.Resources>
     <DockPanel>
         <!-- Menu Bar -->
-        <Menu DockPanel.Dock="Top" FontSize="14" Background="#FF6C6C6C" Foreground="White">
-            <MenuItem Header="_File" Margin="2">
-                <MenuItem Header="_Open" InputGestureText="CTRL + O" Click="Open_Click" Background="{x:Null}" BorderBrush="{x:Null}" />
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open" InputGestureText="CTRL + O" Click="Open_Click" />
                 <MenuItem Header="_Save" InputGestureText="CTRL + S" IsEnabled="False" />
                 <Separator  />
                 <MenuItem Header="_Exit" />
@@ -21,7 +24,7 @@
         <Border DockPanel.Dock="Top" BorderThickness="0 0 0 2" BorderBrush="DarkGray" />
 
         <!-- Content -->
-        <Grid Background="#FF6C6C6C">
+        <Grid Background="{StaticResource DarkTheme}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition MinWidth="100" MaxWidth="500" Width="300" />
                 <ColumnDefinition Width="*" />
@@ -33,7 +36,7 @@
             <Border Grid.Column="0" Grid.RowSpan="1" BorderThickness="0 0 2 0" BorderBrush="DarkGray" />
 
             <!--SIDE BAR-->
-            <TabControl Margin="0 0 10 0" BorderBrush="DarkGray" Background="#FF6C6C6C">
+            <TabControl Margin="0 0 10 0" BorderBrush="DarkGray" Background="{StaticResource DarkTheme}">
                 <TabControl.Resources>
                     <Style TargetType="{x:Type TabItem}">
                         <Setter Property="Width" Value="110"></Setter>
@@ -42,13 +45,7 @@
                     </Style>
                 </TabControl.Resources>
                 <TabItem Header="Case Folder" BorderBrush="DarkGray">
-                    <TabItem.Background>
-                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                            <GradientStop Color="#FF898989" Offset="1"/>
-                            <GradientStop Color="#FFD1D1D1" Offset="0.652"/>
-                        </LinearGradientBrush>
-                    </TabItem.Background>
-                    <TreeView x:Name="treeViewCaseFolder" DockPanel.Dock="Top" Padding="0 10 0 2" Background="#FF6C6C6C" BorderThickness="0">
+                    <local:IndexedTreeView x:Name="treeViewCaseFolder" DockPanel.Dock="Top" Padding="0 10 0 2" Background="{StaticResource DarkTheme}" BorderThickness="0">
                         <TreeView.Resources>
                             <Style x:Key="Folder" TargetType="{x:Type local:IndexedTreeViewItem}">
                                 <Setter Property="Foreground" Value="White"></Setter>
@@ -76,9 +73,9 @@
                                 </Setter>
                             </Style>
                         </TreeView.Resources>
-                    </TreeView>
+                    </local:IndexedTreeView>
                 </TabItem>
-                <TabItem Header="Metrics" BorderBrush="DarkGray" Background="#FF6C6C6C">
+                <TabItem Header="Metrics" BorderBrush="DarkGray">
                     <!-- Action Bar -->
                     <Border Margin="-2 0 -2 0" BorderThickness="0 0 0 5" BorderBrush="Gray" Height="30" VerticalAlignment="Top">
                         <StackPanel Orientation="Horizontal">
@@ -97,7 +94,7 @@
             </TabControl>
 
             <!-- Main Content-->
-            <TabControl x:Name="tabControlMainContent" Grid.Column="1" Visibility="Hidden" Background="#FF6C6C6C">
+            <TabControl x:Name="tabControlMainContent" Grid.Column="1" Visibility="Hidden" Background="{StaticResource DarkTheme}">
                 <TabItem Header="Case Notes" Height="20" TextBlock.TextAlignment="Left">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -162,9 +159,9 @@
                                 </Style>
                             </DataGrid.Resources>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Entry Number" Width="150" Binding="{Binding entryNumber}" ElementStyle="{StaticResource ColumnElementStyle}" />
-                                <DataGridTextColumn Header="Entry Date" Width="200" Binding="{Binding entryDateTime}" ElementStyle="{StaticResource ColumnElementStyle}" />
-                                <DataGridTextColumn Header="Entry Content" Width="*" Binding="{Binding entryContent}" ElementStyle="{StaticResource ColumnElementStyle}" />
+                                <DataGridTextColumn Header="Entry Number" Width="150" Binding="{Binding EntryNumber}" ElementStyle="{StaticResource ColumnElementStyle}" />
+                                <DataGridTextColumn Header="Entry Date" Width="200" Binding="{Binding EntryDateTime}" ElementStyle="{StaticResource ColumnElementStyle}" />
+                                <DataGridTextColumn Header="Entry Content" Width="*" Binding="{Binding EntryContent}" ElementStyle="{StaticResource ColumnElementStyle}" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
