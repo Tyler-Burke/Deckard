@@ -22,7 +22,7 @@ namespace Deckard
         private MetricFile metricFile;
         private const string DATE_FORMAT = "ddMMMyyyy HH:mm";
         private ENTable currentENTable;
-        private List<string> currentFilteredProperties;
+        public List<string> currentFilteredProperties;
 
         public MainWindow()
         {

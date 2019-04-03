@@ -25,16 +25,14 @@ namespace Deckard
             mainWindow = ((MainWindow)Application.Current.MainWindow);
             mainWindow.IsEnabled = false;
 
-            List<ListViewItem> items = new List<ListViewItem>();
-            foreach (var property in _enTable.GetDistinctPropertyNumber())
-            {
-                if (_currentFilteredProperties.Contains(property))
-                    items.Add(new ListViewItem() { Content = property, IsSelected = true });
-                else
-                    items.Add(new ListViewItem() { Content = property });
-            }
+            listViewProperties.SelectedItems.Clear();
+            var disctinctPropertyNumbers = _enTable.GetDistinctPropertyNumber();
+            listViewProperties.ItemsSource = disctinctPropertyNumbers;
 
-            listViewProperties.ItemsSource = items;
+            foreach (var item in _currentFilteredProperties)
+            {
+                listViewProperties.SelectedItems.Add(item);
+            }            
 
             listViewProperties.Focus();
         }   
@@ -46,14 +44,17 @@ namespace Deckard
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            string selectedItem = "";
             if (listViewProperties.SelectedItems.Count > 0)
             {
-                ListViewItem firstItem = listViewProperties.SelectedItems[0] as ListViewItem;
-                selectedItem = firstItem.Content.ToString();
+                List<string> selectedItems = new List<string>();
+                foreach (var item in listViewProperties.SelectedItems)
+                {
+                    selectedItems.Add(item.ToString());
+                }
+                mainWindow.currentFilteredProperties = selectedItems;
             }
-            
-            mainWindow.entriesDataGrid.ItemsSource = _enTable.FilterByProperty(selectedItem);
+
+            mainWindow.entriesDataGrid.ItemsSource = _enTable.FilterByProperty(_currentFilteredProperties);
             CloseWindow();
         }
 
