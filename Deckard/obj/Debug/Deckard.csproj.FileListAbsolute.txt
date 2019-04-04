@@ -70,10 +70,8 @@ F:\Deckard\Deckard\obj\Debug\GeneratedInternalTypeHelper.g.cs
 F:\Deckard\Deckard\obj\Debug\PropertyList.g.cs
 F:\Deckard\Deckard\obj\Debug\PropertyList.baml
 F:\Deckard\Deckard\obj\Debug\App.baml
-D:\Deckard\Deckard\obj\Debug\PropertyList.g.cs
 D:\Deckard\Deckard\obj\Debug\GeneratedInternalTypeHelper.g.cs
 D:\Deckard\Deckard\obj\Debug\App.baml
-D:\Deckard\Deckard\obj\Debug\PropertyList.baml
 F:\Deckard\Deckard\obj\Debug\Deckard.csprojAssemblyReference.cache
 E:\Deckard\Deckard\obj\Debug\PropertyList.baml
 E:\Deckard\Deckard\obj\Debug\PropertyList.g.cs
