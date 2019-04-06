@@ -8,6 +8,10 @@
         Title="Deckard" Height="800" Width="1100" MinWidth="1000" FontFamily="Segoe UI">
     <Window.Resources>
         <SolidColorBrush x:Key="DarkTheme">#FF6C6C6C</SolidColorBrush>
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"
+                     Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}"
+                     Color="{DynamicResource {x:Static SystemColors.HighlightTextColorKey}}"/>
     </Window.Resources>
     <DockPanel>
         <!-- Menu Bar -->
@@ -30,13 +34,16 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <GridSplitter Grid.Column="0" Grid.RowSpan="7" ShowsPreview="True" Width="10" Background="Gray" />
-            <Border Grid.Column="0" Grid.RowSpan="1" BorderThickness="0 0 2 0" BorderBrush="DarkGray" />
+            
+            <!-- Slider for Side Bar -->
+            <GridSplitter Grid.Column="0" Grid.RowSpan="3" ShowsPreview="True" Width="10" Background="Gray" />
 
             <!--SIDE BAR-->
-            <TabControl Margin="0 0 10 0" BorderBrush="DarkGray" Background="{StaticResource DarkTheme}">
+            <TabControl Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Margin="5 5 10 0" BorderBrush="DarkGray" Background="{StaticResource DarkTheme}">
                 <TabControl.Resources>
                     <Style TargetType="{x:Type TabItem}">
                         <Setter Property="Width" Value="110"></Setter>
@@ -77,41 +84,35 @@
                 </TabItem>
             </TabControl>
 
-            <!-- Main Content-->
+            <!-- HEADER -->
+            <StackPanel x:Name="headerStackPanel" Orientation="Horizontal" Grid.Column="1" Grid.Row="0" Visibility="Hidden">
 
-            <!-- Incident Number -->
-            <StackPanel Orientation="Vertical" Grid.Column="2" Grid.Row="1">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock x:Name="lblIncidentNumber" FontSize="20" FontWeight="Bold" Foreground="White" Margin="5 5 25 5">
+                <!-- Incident Number -->
+                <TextBlock x:Name="lblIncidentNumber" FontSize="20" FontWeight="Bold" Foreground="White" Margin="5 5 25 5">
                         Incident Number
-                    </TextBlock>
-                    <!-- First Entry Time -->
-                    <TextBlock Grid.Column="3" Grid.Row="1" VerticalAlignment="Center" FontSize="14" Foreground="White">First Entry Time</TextBlock>
-                    <TextBox x:Name="txtFirstEntryTime" Grid.Column="4" Grid.Row="1" Margin="5" Padding="2" Width="150" Height="25" IsEnabled="False" />
+                </TextBlock>
 
-                    <!-- Second Entry Time -->
-                    <TextBlock Grid.Column="5" Grid.Row="1" VerticalAlignment="Center" FontSize="14" Foreground="White">Last Entry Time</TextBlock>
-                    <TextBox x:Name="txtLastEntryTime" Grid.Column="6" Grid.Row="1" Margin="5" Padding="2" Width="150" Height="25" IsEnabled="False" />
-                </StackPanel>
-                <Border BorderThickness="0 2 0 0" BorderBrush="Gray">
-                    <TabControl x:Name="tabControlMainContent" Background="{StaticResource DarkTheme}">
-                        <TabControl.Resources>
-                            <Style x:Key="ColumnElementStyle" TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="White" />
-                                <Setter Property="Padding" Value="15 15 15 15" />
-                                <Setter Property="TextWrapping" Value="Wrap" />
-                                <Setter Property="HorizontalAlignment" Value="Left" />
-                                <Setter Property="FontSize" Value="14" />
-                            </Style>
-                        </TabControl.Resources>
-                        <local:CaseNotesTabItem>
-                            <DockPanel x:Name="TestTab">
-                                
-                            </DockPanel>
-                        </local:CaseNotesTabItem>
-                    </TabControl>
-                </Border>
+                <!-- First Entry Time -->
+                <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="White">First Entry Time</TextBlock>
+                <TextBox x:Name="txtFirstEntryTime" Margin="5" Padding="2" Width="150" Height="25" IsEnabled="False" />
+
+                <!-- Second Entry Time -->
+                <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="White">Last Entry Time</TextBlock>
+                <TextBox x:Name="txtLastEntryTime" Margin="5" Padding="2" Width="150" Height="25" IsEnabled="False" />
             </StackPanel>
+
+            <!-- FILE TAB CONTROL -->
+            <TabControl Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" x:Name="tabControlMainContent" Background="{StaticResource DarkTheme}">
+                <TabControl.Resources>
+                    <Style x:Key="ColumnElementStyle" TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="White" />
+                        <Setter Property="Padding" Value="15 15 15 15" />
+                        <Setter Property="TextWrapping" Value="Wrap" />
+                        <Setter Property="HorizontalAlignment" Value="Left" />
+                        <Setter Property="FontSize" Value="14" />
+                    </Style>
+                </TabControl.Resources>
+            </TabControl>
         </Grid>
     </DockPanel>
 </Window>

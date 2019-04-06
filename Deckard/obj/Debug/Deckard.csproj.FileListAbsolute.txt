@@ -67,12 +67,9 @@ C:\Users\Tyler\Desktop\Deckard\Deckard\obj\Debug\Deckard.pdb
 C:\Users\Tyler\Desktop\Deckard\Deckard\obj\Debug\GeneratedInternalTypeHelper.g.cs
 E:\Deckard\Deckard\obj\Debug\GeneratedInternalTypeHelper.g.cs
 F:\Deckard\Deckard\obj\Debug\GeneratedInternalTypeHelper.g.cs
-F:\Deckard\Deckard\obj\Debug\PropertyList.g.cs
-F:\Deckard\Deckard\obj\Debug\PropertyList.baml
 F:\Deckard\Deckard\obj\Debug\App.baml
 D:\Deckard\Deckard\obj\Debug\GeneratedInternalTypeHelper.g.cs
 D:\Deckard\Deckard\obj\Debug\App.baml
-F:\Deckard\Deckard\obj\Debug\Deckard.csprojAssemblyReference.cache
 E:\Deckard\Deckard\obj\Debug\PropertyList.baml
 E:\Deckard\Deckard\obj\Debug\PropertyList.g.cs
 E:\Deckard\Deckard\obj\Debug\App.baml
@@ -87,3 +84,9 @@ D:\Deckard\Deckard\bin\Debug\Newtonsoft.Json.dll
 D:\Deckard\Deckard\bin\Debug\DocumentFormat.OpenXml.dll
 D:\Deckard\Deckard\bin\Debug\DocumentFormat.OpenXml.xml
 D:\Deckard\Deckard\obj\Debug\Deckard.csprojAssemblyReference.cache
+F:\Deckard\Deckard\bin\Debug\Newtonsoft.Json.dll
+F:\Deckard\Deckard\bin\Debug\DocumentFormat.OpenXml.dll
+F:\Deckard\Deckard\bin\Debug\DocumentFormat.OpenXml.xml
+F:\Deckard\Deckard\obj\Debug\CreateEditMetricWindow.baml
+F:\Deckard\Deckard\obj\Debug\CreateEditMetricWindow.g.cs
+F:\Deckard\Deckard\obj\Debug\Deckard.csprojAssemblyReference.cache

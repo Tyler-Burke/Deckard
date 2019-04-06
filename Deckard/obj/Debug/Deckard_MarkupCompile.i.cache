@@ -4,7 +4,7 @@
 winexe
 C#
 .cs
-D:\Deckard\Deckard\obj\Debug\
+F:\Deckard\Deckard\obj\Debug\
 Deckard
 none
 false
@@ -12,8 +12,8 @@ DEBUG;TRACE
 
 3-1660180184
 
-141036973240
-17-592924276
+14-1666376182
+17-1484821282
 App.xaml;CreateEditMetricWindow.xaml;MainWindow.xaml;
 
 True
