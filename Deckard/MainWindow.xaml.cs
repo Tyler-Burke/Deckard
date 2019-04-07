@@ -25,7 +25,8 @@ namespace Deckard
         private List<string> acceptedFileExtensions;
         private MetricFile metricFile;
         private const string DATE_FORMAT = "ddMMMyyyy HH:mm";
-        private const string DEFAULT_CASE_PATH = @"D:\SCANEXC\Uploaded";
+        private const string DEFAULT_CASE_PATH = @"E:";
+        private Case rootCase;
 
         public MainWindow()
         {
@@ -82,46 +83,92 @@ namespace Deckard
         /// <param name="path"></param>
         private void OpenCaseFolder(string path)
         {
-            DirectoryInfo caseFolder = new DirectoryInfo(path);
-            string caseName = caseFolder.Name;
-            mainWindow.Title += " - " + caseName;
-            headerStackPanel.Visibility = Visibility.Visible;
-            lblIncidentNumber.Text = caseName;
-
             //Instantiate Tree View Opened Nodes List
             treeViewOpenedNodes = new Dictionary<int, TabItem>();
 
-            //Create Tree View
-            ListDirectory(treeViewCaseFolder, path);
+            Case caseFolder = CainLibrary.ConvertPathToCase(path);
 
-            //Open Case Notes Tab and Populate Controls
-            var docxFile = caseFolder.GetFiles().Where(a => a.Name.Contains("Case Notes") && a.Extension == ".docx").FirstOrDefault();
-            if (docxFile != null)
-            {
-                var tabItem = treeViewCaseFolder.FindItemByPath(docxFile.FullName);
-                tabItem.IsSelected = true;
-                OpenFileTabItem(tabItem);
-            }
+            mainWindow.Title = "Deckard Cain";
+            mainWindow.Title += " - " + caseFolder.CaseNumber;
+            headerStackPanel.Visibility = Visibility.Visible;
+            lblIncidentNumber.Text = caseFolder.CaseNumber;
+
+            CreateCaseFolderTreeView(caseFolder);            
         }
+
+        private void CreateCaseFolderTreeView(Case caseFolder)
+        {
+            treeViewCaseFolder.Items.Clear();
+            IndexedTreeViewItem rootDirectoryNode = CreateCaseFolderTreeViewItem(caseFolder.RootCaseDirectory);
+            rootDirectoryNode.IsExpanded = true;
+            treeViewCaseFolder.Items.Add(rootDirectoryNode);
+        }
+        private IndexedTreeViewItem CreateCaseFolderTreeViewItem(CaseDirectory caseDirectory)
+        {
+            IndexedTreeViewItem directoryNode = new IndexedTreeViewItem(caseDirectory)
+            {
+                Header = caseDirectory.DirectoryName,
+                Style = treeViewCaseFolder.Resources["Folder"] as Style
+            };
+            directoryNode.MouseRightButtonUp += DirectoryNode_MouseRightButtonUp;
+            ContextMenu contextMenu = new ContextMenu() { PlacementTarget = directoryNode };
+            MenuItem menuItem = new MenuItem
+            {
+                Header = "Open as Gallery"
+            };
+            menuItem.Click += MenuItem_Click;
+            contextMenu.Items.Add(menuItem);
+            directoryNode.ContextMenu = contextMenu;
+
+            //Register with tree (adds index)
+            treeViewCaseFolder.RegisterChildNode(directoryNode);
+
+            foreach (var subDirectory in caseDirectory.CaseDirectories)
+            {
+                IndexedTreeViewItem newNode = CreateCaseFolderTreeViewItem(subDirectory);
+                treeViewCaseFolder.AddToCollection(newNode);
+                directoryNode.Items.Add(newNode);
+            }
+
+            foreach (var file in caseDirectory.CaseFiles)
+            {
+                if (acceptedFileExtensions.Contains(file.Extension))
+                {
+                    IndexedTreeViewItem fileNode = new IndexedTreeViewItem(file)
+                    {
+                        Header = file.FileName,
+                        Style = treeViewCaseFolder.Resources["File"] as Style
+                    };
+                    fileNode.MouseDoubleClick += FileNode_MouseDoubleClick;
+                    fileNode.MouseRightButtonUp += FileNode_MouseRightButtonUp;
+                    treeViewCaseFolder.RegisterChildNode(fileNode);
+                    treeViewCaseFolder.AddToCollection(fileNode);
+                    directoryNode.Items.Add(fileNode);
+                }
+            }
+
+            return directoryNode;
+        }
+
         /// <summary>
         /// Populate an IndexedTreeView with the contents of a system directory
         /// </summary>
         /// <param name="treeView">The IndexedTreeView object to be populated</param>
         /// <param name="path">The path to the system directory to populate the tree with</param>
-        private void ListDirectory(IndexedTreeView treeView, string path)
+        /*private void ListDirectory(IndexedTreeView treeView, string path)
         {
             treeView.Items.Clear();
             DirectoryInfo rootDirectoryInfo = new DirectoryInfo(path);
             IndexedTreeViewItem rootDirectoryNode = CreateDirectoryNode(rootDirectoryInfo);
             rootDirectoryNode.IsExpanded = true;
             treeView.Items.Add(rootDirectoryNode);
-        }
+        }*/
         /// <summary>
         /// Recursively goes into system directory tree and populates an IndexedTreeViewItem object with the directory's contents
         /// </summary>
         /// <param name="directory">Directory that will be used to populate IndexedTreeViewItem</param>
         /// <returns></returns>
-        private IndexedTreeViewItem CreateDirectoryNode(DirectoryInfo directory)
+        /*private IndexedTreeViewItem CreateDirectoryNode(DirectoryInfo directory)
         {
             IndexedTreeViewItem directoryNode = new IndexedTreeViewItem { Header = directory.Name, Path =  directory.FullName, FileType = FileType.Directory };
             directoryNode.Style = treeViewCaseFolder.Resources["Folder"] as Style;
@@ -162,6 +209,8 @@ namespace Deckard
             return directoryNode;
         }
 
+        */
+
         /// <summary>
         /// Creates a new TabItem and populates the tab basesd on the contents of the parameter IndexedTreeViewItem
         /// </summary>
@@ -173,31 +222,22 @@ namespace Deckard
             {
                 if (item.IsSelected && item.Index != 0 && !treeViewOpenedNodes.Keys.Contains(item.Index))
                 {
-                    string[] splitFileName = item.Header.ToString().Split('.');
-                    string extension = ".";
-
-                    if (splitFileName.Length > 1)
-                    {
-                        extension += splitFileName[1];
-                    }
-
                     //Create tab item if the tab is an accepted file extension
-                    if (acceptedFileExtensions != null && acceptedFileExtensions.Contains(extension))
+                    if (acceptedFileExtensions != null && acceptedFileExtensions.Contains(item.CaseFile.Extension))
                     {
-                        switch (extension)
+                        switch (item.CaseFile.Extension)
                         {
                             case ".docx":
-                                CaseNotesTabItem caseNotesTabItem = new CaseNotesTabItem() { Header = item.Header };
-                                caseNotesTabItem.MouseRightButtonUp += TabItemMainContent_MouseRightButtonUp;
-                                caseNotesTabItem = PopulateCaseNotesTab(caseNotesTabItem, item.Path);
-                                tabControlMainContent.Items.Add(caseNotesTabItem);
-                                caseNotesTabItem.Focus();
-                                treeViewOpenedNodes.Add(item.Index, caseNotesTabItem);
+                                if (item.CaseFile != null && item.CaseFile.CaseNotes != null)
+                                {
+                                    CaseNotesTabItem caseNotesTabItem = CreateCaseNotesTab(item.CaseFile);                                    
+                                    tabControlMainContent.Items.Add(caseNotesTabItem);
+                                    caseNotesTabItem.Focus();
+                                    treeViewOpenedNodes.Add(item.Index, caseNotesTabItem);
+                                }                                
                                 break;
                             default:
-                                TabItem tabItem = new TabItem() { Header = item.Header };
-                                tabItem.MouseRightButtonUp += TabItemMainContent_MouseRightButtonUp;
-                                tabItem = PopulateFileTab(tabItem, item.Path);
+                                TabItem tabItem = PopulateFileTab(item.CaseFile);
                                 tabControlMainContent.Items.Add(tabItem);
                                 tabItem.Focus();
                                 treeViewOpenedNodes.Add(item.Index, tabItem);
@@ -210,22 +250,25 @@ namespace Deckard
         }
         private void OpenDirectoryTabItem(IndexedTreeViewItem item)
         {
-            if (item.FileType == FileType.Directory)
+            if (item.FileType == FileType.Directory && item.CaseDirectory != null)
             {
-                TabItem tabItem = new TabItem() { Header = item.Header };
-                tabItem.MouseRightButtonUp += TabItemMainContent_MouseRightButtonUp;
-                tabItem = PopulateGalleryTab(tabItem, item.Path);
+                TabItem tabItem = PopulateGalleryTab(item.CaseDirectory);
                 tabControlMainContent.Items.Add(tabItem);
                 tabItem.Focus();
                 treeViewOpenedNodes.Add(item.Index, tabItem);
             }
         }
 
-        private CaseNotesTabItem PopulateCaseNotesTab(CaseNotesTabItem tabItem, string path)
+        private CaseNotesTabItem CreateCaseNotesTab(CaseFile caseFile)
         {
-            tabItem.ENTable = CainLibrary.ConvertDocxToENTable(path);
-            txtFirstEntryTime.Text = tabItem.ENTable.GetStartTime().ToString(DATE_FORMAT).ToUpper();
-            txtLastEntryTime.Text = tabItem.ENTable.GetEndTime().ToString(DATE_FORMAT).ToUpper();
+            CaseNotesTabItem tabItem = new CaseNotesTabItem
+            {
+                Header = caseFile.FileName
+            };
+            tabItem.MouseRightButtonUp += TabItemMainContent_MouseRightButtonUp;
+            tabItem.CaseNotes = caseFile.CaseNotes;
+            txtFirstEntryTime.Text = caseFile.CaseNotes.GetStartTime().ToString(DATE_FORMAT).ToUpper();
+            txtLastEntryTime.Text = caseFile.CaseNotes.GetEndTime().ToString(DATE_FORMAT).ToUpper();
 
             //Build Grid
             Grid grid = new Grid();
@@ -269,7 +312,7 @@ namespace Deckard
             //Build Tab Item's content
             DataGrid dataGrid = new DataGrid()
             {
-                ItemsSource = tabItem.ENTable.Rows,
+                ItemsSource = caseFile.CaseNotes.Rows,
                 AutoGenerateColumns = false,
                 IsReadOnly = true,
                 SelectionUnit = DataGridSelectionUnit.Cell,
@@ -315,15 +358,27 @@ namespace Deckard
 
             return tabItem;
         }
-        private TabItem PopulateFileTab(TabItem tabItem, string path)
+        private TabItem PopulateFileTab(CaseFile caseFile)
         {
+            TabItem tabItem = new TabItem
+            {
+                Header = caseFile.FileName
+            };
+            tabItem.MouseRightButtonUp += TabItemMainContent_MouseRightButtonUp;
+
             WebBrowser webBrowser = new WebBrowser();
-            webBrowser.Navigate(path);
+            webBrowser.Navigate(caseFile.RootPath);
             tabItem.Content = webBrowser;
             return tabItem;
         }
-        private TabItem PopulateGalleryTab(TabItem tabItem, string path)
+        private TabItem PopulateGalleryTab(CaseDirectory directory)
         {
+            TabItem tabItem = new TabItem()
+            {
+                Header = directory.DirectoryName
+            };
+            tabItem.MouseRightButtonUp += TabItemMainContent_MouseRightButtonUp;
+
             ListBox listBox = new ListBox();
             ScrollViewer.SetHorizontalScrollBarVisibility(listBox, ScrollBarVisibility.Disabled);
 
@@ -335,17 +390,7 @@ namespace Deckard
                 VisualTree = d
             };
 
-            DirectoryInfo directory = new DirectoryInfo(path);
-
-            foreach (var file in directory.GetFiles())
-            {
-                BitmapImage src = new BitmapImage();
-                src.BeginInit();
-                src.UriSource = new Uri(file.FullName);
-                src.CacheOption = BitmapCacheOption.OnLoad;
-                src.EndInit();
-                listBox.Items.Add(new Image() { Source = src });
-            }
+            listBox.ItemsSource = directory.Images;
 
             tabItem.Content = listBox;
 

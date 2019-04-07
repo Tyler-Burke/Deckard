@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using Cain;
+using System.Windows.Controls;
 
 namespace Deckard
 {
@@ -11,9 +12,19 @@ namespace Deckard
     public class IndexedTreeViewItem : TreeViewItem
     {
         public int Index { get; set; }
-        public string Path { get; set; }
         public FileType FileType { get; set; }
+        public CaseDirectory CaseDirectory { get; set; }
+        public CaseFile CaseFile { get; set; }
 
-        public IndexedTreeViewItem() : base() { }
+        public IndexedTreeViewItem(CaseDirectory caseDirectory) : base()
+        {
+            FileType = FileType.Directory;
+            CaseDirectory = caseDirectory;
+        }
+        public IndexedTreeViewItem(CaseFile caseFile) : base()
+        {
+            FileType = FileType.File;
+            CaseFile = caseFile;
+        }
     }
 }

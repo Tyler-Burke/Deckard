@@ -20,6 +20,5 @@ namespace Deckard
         }
 
         public void AddToCollection(IndexedTreeViewItem indexedTreeViewItem) => _collection.Add(indexedTreeViewItem);
-        public IndexedTreeViewItem FindItemByPath(string path) => _collection.SingleOrDefault(a => a.Path == path);
     }
 }
