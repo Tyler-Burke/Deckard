@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Deckard"
         mc:Ignorable="d"
-        Title="Deckard" Height="800" Width="1100" MinWidth="1000" FontFamily="Segoe UI">
+        Title="Deckard Cain" Height="800" Width="1200" MinWidth="1000" FontFamily="Segoe UI">
     <Window.Resources>
         <SolidColorBrush x:Key="DarkTheme">#FF6C6C6C</SolidColorBrush>
         <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"
@@ -17,10 +17,16 @@
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_Open" InputGestureText="CTRL + O" Click="Open_Click" />
-                <MenuItem Header="_Save" InputGestureText="CTRL + S" IsEnabled="False" />
-                <Separator  />
-                <MenuItem Header="_Exit" />
+                <MenuItem Header="_Open" InputGestureText="CTRL + O" Click="OpenCaseFolderMainMenu_Click" />
+                <Separator />
+                <MenuItem Header="_Exit" Click="ExitApplicationMainMenu_Click" />
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Metrics" IsEnabled="False" />
+                <MenuItem Header="_Options..." IsEnabled="False" />
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About Deckard Cain" IsEnabled="False" />
             </MenuItem>
         </Menu>
 
@@ -30,8 +36,9 @@
         <!-- Content -->
         <Grid Background="{StaticResource DarkTheme}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition MinWidth="100" MaxWidth="500" Width="300" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition MinWidth="150" MaxWidth="500" Width="300" />
+                <ColumnDefinition MinWidth="500" Width="*" />
+                <ColumnDefinition MinWidth="150" MaxWidth="500" Width="300" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />
@@ -43,7 +50,7 @@
             <GridSplitter Grid.Column="0" Grid.RowSpan="3" ShowsPreview="True" Width="10" Background="Gray" />
 
             <!--SIDE BAR-->
-            <TabControl Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Margin="5 5 10 0" BorderBrush="DarkGray" Background="{StaticResource DarkTheme}">
+            <TabControl Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Margin="0 5 10 0" BorderBrush="DarkGray" Background="{StaticResource DarkTheme}">
                 <TabControl.Resources>
                     <Style TargetType="{x:Type TabItem}">
                         <Setter Property="Width" Value="110"></Setter>
@@ -52,7 +59,7 @@
                     </Style>
                 </TabControl.Resources>
                 <TabItem Header="Case Folder" BorderBrush="DarkGray">
-                    <local:IndexedTreeView x:Name="treeViewCaseFolder" DockPanel.Dock="Top" Padding="0 10 0 2" Background="{StaticResource DarkTheme}" BorderThickness="0">
+                    <local:IndexedTreeView x:Name="treeViewCaseFolder" Padding="0 10 0 2" Background="{StaticResource DarkTheme}" BorderThickness="0">
                         <TreeView.Resources>
                             <Style x:Key="Folder" TargetType="{x:Type local:IndexedTreeViewItem}">
                                 <Setter Property="Foreground" Value="White"></Setter>
@@ -102,7 +109,7 @@
             </StackPanel>
 
             <!-- FILE TAB CONTROL -->
-            <TabControl Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" x:Name="tabControlMainContent" Background="{StaticResource DarkTheme}">
+            <TabControl Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Margin="0 0 10 0" x:Name="tabControlMainContent" Background="{StaticResource DarkTheme}">
                 <TabControl.Resources>
                     <Style x:Key="ColumnElementStyle" TargetType="TextBlock">
                         <Setter Property="Foreground" Value="White" />
@@ -112,6 +119,22 @@
                         <Setter Property="FontSize" Value="14" />
                     </Style>
                 </TabControl.Resources>
+            </TabControl>
+
+            <!-- Slider for Side Bar -->
+            <GridSplitter Grid.Column="1" Grid.RowSpan="3" ShowsPreview="True" Width="10" Background="Gray" />
+            
+            <!-- METRICS TAB CONTROL -->
+            <TabControl Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" Margin="0 5 0 0" BorderBrush="DarkGray" Background="{StaticResource DarkTheme}">
+                <TabControl.Resources>
+                    <Style TargetType="{x:Type TabItem}">
+                        <Setter Property="Width" Value="110"></Setter>
+                        <Setter Property="Height" Value="25"></Setter>
+                        <Setter Property="FontSize" Value="14"></Setter>
+                    </Style>
+                </TabControl.Resources>
+                <TabItem Header="Metrics" BorderBrush="DarkGray">
+                </TabItem>
             </TabControl>
         </Grid>
     </DockPanel>
