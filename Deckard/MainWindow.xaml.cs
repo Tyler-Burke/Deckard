@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -15,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Data;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Imaging;
+using System.Drawing.Imaging;
 
 namespace Deckard
 {
@@ -359,15 +358,15 @@ namespace Deckard
             ListBox listBox = new ListBox();
             ScrollViewer.SetHorizontalScrollBarVisibility(listBox, ScrollBarVisibility.Disabled);
 
-            var d = new FrameworkElementFactory(typeof(UniformGrid));
-            d.SetValue(UniformGrid.ColumnsProperty, 3);
+            var uniformGrid = new FrameworkElementFactory(typeof(UniformGrid));
+            uniformGrid.SetValue(UniformGrid.ColumnsProperty, 3);
 
             listBox.ItemsPanel = new ItemsPanelTemplate
             {
-                VisualTree = d
+                VisualTree = uniformGrid
             };
 
-            listBox.ItemsSource = directory.Images;
+            listBox.ItemsSource = ConvertToImages(directory.Images);
 
             tabItem.Content = listBox;
 
@@ -377,6 +376,52 @@ namespace Deckard
         {
             tabControlMainContent.Items.Remove(item);
             treeViewOpenedNodes.Remove(treeViewOpenedNodes.SingleOrDefault(a => a.Value == item).Key);
+        }
+        private List<Image> ConvertToImages(List<System.Drawing.Bitmap> bitmaps)
+        {
+            List<Image> images = new List<Image>();
+
+            foreach (var bitmap in bitmaps)
+                images.Add(new Image()
+                {
+                    Source = CreateBitmapSourceFromGdiBitmap(bitmap),
+                    Width = 300,
+                    Height = 400
+                });
+
+            return images;
+        }
+        private BitmapSource CreateBitmapSourceFromGdiBitmap(System.Drawing.Bitmap bitmap)
+        {
+            if (bitmap == null)
+                throw new ArgumentNullException("bitmap");
+
+            var rect = new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height);
+
+            var bitmapData = bitmap.LockBits(
+                rect,
+                ImageLockMode.ReadWrite,
+                System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+            try
+            {
+                var size = (rect.Width * rect.Height) * 4;
+
+                return BitmapSource.Create(
+                    bitmap.Width,
+                    bitmap.Height,
+                    bitmap.HorizontalResolution,
+                    bitmap.VerticalResolution,
+                    PixelFormats.Bgra32,
+                    null,
+                    bitmapData.Scan0,
+                    size,
+                    bitmapData.Stride);
+            }
+            finally
+            {
+                bitmap.UnlockBits(bitmapData);
+            }
         }
 
         //Global Events
