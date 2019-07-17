@@ -22,7 +22,6 @@ namespace Deckard
         private readonly FieldInfo _menuDropAlignmentField;
         private Dictionary<int, TabItem> treeViewOpenedNodes;
         private List<string> acceptedFileExtensions;
-        private MetricFile metricFile;
         private const string DATE_FORMAT = "ddMMMyyyy HH:mm";
         private const string DEFAULT_CASE_PATH = @"C:";
         private Case rootCase;
@@ -61,10 +60,6 @@ namespace Deckard
             {
                 acceptedFileExtensions.Add(extension);
             }
-
-            //Load Metric File
-            string applicationFolderPath = AppDomain.CurrentDomain.BaseDirectory;
-            metricFile = new MetricFile(applicationFolderPath + @"Metrics.json");
         }
         /// <summary>
         /// Removes the preset pop-up alignment from left aligned and changes to default right aligned
@@ -88,7 +83,7 @@ namespace Deckard
             rootCase = CainLibrary.ConvertPathToCase(path);
 
             mainWindow.Title = "Deckard Cain";
-            mainWindow.Title += " - " + rootCase.CaseNumber;
+            mainWindow.Title += " - " + rootCase.CaseName;
             headerStackPanel.Visibility = Visibility.Visible;
             lblIncidentNumber.Text = rootCase.CaseNumber;
 
@@ -285,10 +280,15 @@ namespace Deckard
                 Height = new GridLength(10)
             });
 
+            TabControl tabControl = new TabControl();
+            Grid.SetColumn(tabControl, 1);
+            Grid.SetColumnSpan(tabControl, 2);
+            Grid.SetRow(tabControl, 1);
+            Grid.SetRowSpan(tabControl, 3);
+
             //Build Tab Item's content
             DataGrid dataGrid = new DataGrid()
             {
-                ItemsSource = caseFile.CaseNotes.Rows,
                 AutoGenerateColumns = false,
                 IsReadOnly = true,
                 SelectionUnit = DataGridSelectionUnit.Cell,
@@ -299,10 +299,6 @@ namespace Deckard
                 Background = (Brush)new BrushConverter().ConvertFrom("#FF6C6C6C")
             };
             ScrollViewer.SetCanContentScroll(dataGrid, false);
-            Grid.SetColumn(dataGrid, 1);
-            Grid.SetColumnSpan(dataGrid, 2);
-            Grid.SetRow(dataGrid, 1);
-            Grid.SetRowSpan(dataGrid, 3);
 
             dataGrid.Columns.Add(new DataGridTextColumn
             {
@@ -314,7 +310,7 @@ namespace Deckard
 
             dataGrid.Columns.Add(new DataGridTextColumn
             {
-                Header = "Entry Number",
+                Header = "Entry Date Time",
                 Width = new DataGridLength(1.0, DataGridLengthUnitType.SizeToCells),
                 Binding = new Binding("EntryDateTime"),
                 ElementStyle = tabControlMainContent.FindResource("ColumnElementStyle") as Style
@@ -322,13 +318,72 @@ namespace Deckard
 
             dataGrid.Columns.Add(new DataGridTextColumn
             {
-                Header = "Entry Number",
+                Header = "Entry Content",
                 Width = new DataGridLength(1, DataGridLengthUnitType.Star),
                 Binding = new Binding("EntryContent"),
                 ElementStyle = tabControlMainContent.FindResource("ColumnElementStyle") as Style
             });
 
-            grid.Children.Add(dataGrid);
+            TabItem rootTab = new TabItem()
+            {
+                Header = "All Rows"
+            };
+            DataGrid rootDg = dataGrid;
+            rootDg.ItemsSource = caseFile.CaseNotes.Rows;
+            rootTab.Content = rootDg;
+            tabControl.Items.Add(rootTab);
+
+            foreach (var property in caseFile.CaseNotes.Properties)
+            {                
+                TabItem tab = new TabItem()
+                {
+                    Header = property.PropertyNumber
+                };
+
+                //Build Tab Item's content
+                DataGrid dg = new DataGrid()
+                {
+                    AutoGenerateColumns = false,
+                    IsReadOnly = true,
+                    SelectionUnit = DataGridSelectionUnit.Cell,
+                    RowBackground = (Brush)new BrushConverter().ConvertFrom("#FF807878"),
+                    AlternationCount = 2,
+                    AlternatingRowBackground = (Brush)new BrushConverter().ConvertFrom("#FF6C6C6C"),
+                    GridLinesVisibility = DataGridGridLinesVisibility.None,
+                    Background = (Brush)new BrushConverter().ConvertFrom("#FF6C6C6C")
+                };
+                ScrollViewer.SetCanContentScroll(dg, false);
+
+                dg.Columns.Add(new DataGridTextColumn
+                {
+                    Header = "Entry Number",
+                    Width = new DataGridLength(1.0, DataGridLengthUnitType.SizeToHeader),
+                    Binding = new Binding("EntryNumber"),
+                    ElementStyle = tabControlMainContent.FindResource("ColumnElementStyle") as Style,
+                });
+
+                dg.Columns.Add(new DataGridTextColumn
+                {
+                    Header = "Entry Date Time",
+                    Width = new DataGridLength(1.0, DataGridLengthUnitType.SizeToCells),
+                    Binding = new Binding("EntryDateTime"),
+                    ElementStyle = tabControlMainContent.FindResource("ColumnElementStyle") as Style
+                });
+
+                dg.Columns.Add(new DataGridTextColumn
+                {
+                    Header = "Entry Content",
+                    Width = new DataGridLength(1, DataGridLengthUnitType.Star),
+                    Binding = new Binding("EntryContent"),
+                    ElementStyle = tabControlMainContent.FindResource("ColumnElementStyle") as Style
+                });
+
+                dg.ItemsSource = property.Rows;
+                tab.Content = dg;
+                tabControl.Items.Add(tab);
+            }
+
+            grid.Children.Add(tabControl);
             tabItem.Content = grid;
             TextBlock.SetTextAlignment(tabItem, TextAlignment.Left);
 
@@ -377,51 +432,19 @@ namespace Deckard
             tabControlMainContent.Items.Remove(item);
             treeViewOpenedNodes.Remove(treeViewOpenedNodes.SingleOrDefault(a => a.Value == item).Key);
         }
-        private List<Image> ConvertToImages(List<System.Drawing.Bitmap> bitmaps)
+        private List<Image> ConvertToImages(List<BitmapImage> bitmaps)
         {
             List<Image> images = new List<Image>();
 
             foreach (var bitmap in bitmaps)
                 images.Add(new Image()
                 {
-                    Source = CreateBitmapSourceFromGdiBitmap(bitmap),
+                    Source = bitmap,
                     Width = 300,
                     Height = 400
                 });
 
             return images;
-        }
-        private BitmapSource CreateBitmapSourceFromGdiBitmap(System.Drawing.Bitmap bitmap)
-        {
-            if (bitmap == null)
-                throw new ArgumentNullException("bitmap");
-
-            var rect = new System.Drawing.Rectangle(0, 0, bitmap.Width, bitmap.Height);
-
-            var bitmapData = bitmap.LockBits(
-                rect,
-                ImageLockMode.ReadWrite,
-                System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-
-            try
-            {
-                var size = (rect.Width * rect.Height) * 4;
-
-                return BitmapSource.Create(
-                    bitmap.Width,
-                    bitmap.Height,
-                    bitmap.HorizontalResolution,
-                    bitmap.VerticalResolution,
-                    PixelFormats.Bgra32,
-                    null,
-                    bitmapData.Scan0,
-                    size,
-                    bitmapData.Stride);
-            }
-            finally
-            {
-                bitmap.UnlockBits(bitmapData);
-            }
         }
 
         //Global Events
@@ -445,6 +468,11 @@ namespace Deckard
         private void ExitApplicationMainMenu_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
+        }
+        private void OpenMetricsWindowMainMenu_Click(object sender, RoutedEventArgs e)
+        {
+            MetricsWindow metricsWindow = new MetricsWindow();
+            metricsWindow.Show();
         }
 
         //Tree View Events

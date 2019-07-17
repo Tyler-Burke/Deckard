@@ -86,15 +86,8 @@
       <SubType>Designer</SubType>
     </Page>
     <Compile Include="CaseNotesTabItem.cs" />
-    <Compile Include="CreateEditMetricWindow.xaml.cs">
-      <DependentUpon>CreateEditMetricWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="IndexedTreeView.cs" />
     <Compile Include="Installer.cs" />
-    <Page Include="CreateEditMetricWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -108,8 +101,29 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="MetricsCreateWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MetricsEditWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MetricsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MetricsCreateWindow.xaml.cs">
+      <DependentUpon>MetricsCreateWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MetricsEditWindow.xaml.cs">
+      <DependentUpon>MetricsEditWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MetricsWindow.xaml.cs">
+      <DependentUpon>MetricsWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

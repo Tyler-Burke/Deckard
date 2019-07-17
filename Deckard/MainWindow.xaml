@@ -22,7 +22,7 @@
                 <MenuItem Header="_Exit" Click="ExitApplicationMainMenu_Click" />
             </MenuItem>
             <MenuItem Header="_Tools">
-                <MenuItem Header="_Metrics" IsEnabled="False" />
+                <MenuItem Header="_Metrics" Click="OpenMetricsWindowMainMenu_Click" />
                 <MenuItem Header="_Options..." IsEnabled="False" />
             </MenuItem>
             <MenuItem Header="_Help">
@@ -36,9 +36,9 @@
         <!-- Content -->
         <Grid Background="{StaticResource DarkTheme}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition MinWidth="150" MaxWidth="500" Width="300" />
+                <ColumnDefinition MinWidth="150" MaxWidth="500" Width="250" />
                 <ColumnDefinition MinWidth="500" Width="*" />
-                <ColumnDefinition MinWidth="150" MaxWidth="500" Width="300" />
+                <ColumnDefinition MinWidth="150" MaxWidth="500" Width="250" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto" />

@@ -10,11 +10,11 @@ none
 false
 DEBUG;TRACE
 
-3-1660180184
+51224484285
 
-10-1541194915
+12942051226
 18-1727877599
-App.xaml;CreateEditMetricWindow.xaml;MainWindow.xaml;
+App.xaml;MainWindow.xaml;MetricsCreateWindow.xaml;MetricsEditWindow.xaml;MetricsWindow.xaml;
 
 False
 
